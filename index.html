@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>Motorola Fix Beeper · 古风打字机诗笺</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      background: radial-gradient(circle at 20% 20%, #f8f3e8 0, #e4d6b8 40%, #cdbba0 100%);
+      font-family: "STKaiti", "KaiTi", "SimSun", "Songti SC", serif;
+      color: #3f2c1c;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1200px;
+      padding: 24px 16px 32px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    header h1 {
+      font-size: 28px;
+      letter-spacing: 0.25em;
+      text-indent: 0.25em;
+      margin-bottom: 6px;
+    }
+
+    header h1 span {
+      font-size: 22px;
+      opacity: 0.85;
+    }
+
+    header p {
+      font-size: 13px;
+      opacity: 0.8;
+    }
+
+    .desk {
+      margin-top: 18px;
+      border-radius: 18px;
+      padding: 18px;
+      background: linear-gradient(180deg, #e0c598 0, #b58a55 55%, #8d5c34 100%);
+      box-shadow:
+        0 18px 36px rgba(60, 35, 17, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+      display: grid;
+      grid-template-rows: minmax(260px, 360px) auto;
+      gap: 16px;
+    }
+
+    /* 上方：纸张画布区域 */
+    .canvas {
+      position: relative;
+      border-radius: 14px;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          rgba(153, 105, 54, 0.32),
+          rgba(153, 105, 54, 0.32) 1px,
+          transparent 1px,
+          transparent 28px
+        ),
+        radial-gradient(circle at 10% 10%, #fefaf1 0, #f2e4cf 45%, #e2cfb3 100%);
+      padding: 12px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(128, 82, 39, 0.4),
+        inset 0 0 30px rgba(108, 73, 36, 0.25);
+    }
+
+    .canvas::before {
+      /* 右上角小章 */
+      content: "墨香";
+      position: absolute;
+      top: 10px;
+      right: 14px;
+      font-size: 12px;
+      letter-spacing: 0.4em;
+      text-indent: 0.4em;
+      color: #a3332f;
+      border: 1px solid #a3332f;
+      padding: 4px 8px;
+      transform: rotate(-9deg);
+      opacity: 0.9;
+    }
+
+    /* 打字机与输入区 */
+    .typewriter-panel {
+      display: grid;
+      grid-template-columns: minmax(260px, 420px) minmax(260px, 1fr);
+      gap: 16px;
+      align-items: center;
+    }
+
+    @media (max-width: 800px) {
+      .typewriter-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* 打字机外观 */
+    .typewriter-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .typewriter-body {
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+      height: 210px;
+      border-radius: 24px 24px 12px 12px;
+      background: radial-gradient(circle at 50% 0, #fdf4e4 0, #e5d1b7 38%, #bba180 100%);
+      box-shadow:
+        0 12px 20px rgba(39, 20, 8, 0.6),
+        0 0 0 1px rgba(96, 63, 34, 0.5) inset;
+      padding: 16px 18px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* 顶部纸张槽 */
+    .paper-slot {
+      position: relative;
+      height: 76px;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #3b2a1b 0, #1b140f 60%, #241712 100%);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+      padding: 4px;
+      overflow: hidden;
+    }
+
+    .paper {
+      position: absolute;
+      left: 8%;
+      top: 8px;
+      width: 84%;
+      height: 80px;
+      border-radius: 4px;
+      background:
+        repeating-linear-gradient(
+          180deg,
+          rgba(32, 22, 14, 0.22),
+          rgba(32, 22, 14, 0.22) 1px,
+          transparent 1px,
+          transparent 24px
+        ),
+        radial-gradient(circle at 12% 0, #fffaf1 0, #f5e4cf 50%, #e7d3b5 100%);
+      box-shadow:
+        0 0 0 1px rgba(88, 58, 35, 0.7),
+        0 4px 8px rgba(0, 0, 0, 0.6);
+      padding: 4px 10px;
+      font-size: 11px;
+      line-height: 1.7;
+      color: #4b2f18;
+    }
+
+    .paper .label-main {
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      text-indent: 0.2em;
+    }
+
+    .paper .label-sub {
+      margin-top: 4px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      opacity: 0.85;
+    }
+
+    .paper .label-sub span:last-child {
+      font-family: "Courier New", monospace;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    /* 打字键盘区 */
+    .keyboard {
+      flex: 1;
+      margin-top: 12px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #6a4632 0, #4b2d1e 50%, #331d14 100%);
+      box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.6) inset,
+        0 6px 12px rgba(0, 0, 0, 0.7);
+      padding: 8px 18px 12px;
+      position: relative;
+    }
+
+    .brand-strip {
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(90deg, #f9e8cc 0, #f0dfc7 50%, #f7e8d0 100%);
+      color: #5f3c27;
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-indent: 0.22em;
+      padding: 4px 18px;
+      border-radius: 999px;
+      box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(115, 73, 42, 0.55);
+      text-transform: uppercase;
+    }
+
+    .key-row {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .key {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 20%, #f5e6cf 0, #c2a178 55%, #7b5433 100%);
+      box-shadow:
+        0 2px 2px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(40, 22, 13, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #24130b;
+    }
+
+    .space-bar {
+      width: 90px;
+      height: 16px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #f3ead7 0, #c29f75 40%, #7a5432 100%);
+      box-shadow:
+        0 2px 2px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(53, 30, 17, 0.85);
+    }
+
+    .indicator-strip {
+      margin-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: #e8d4b4;
+      opacity: 0.9;
+    }
+
+    .indicator-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #ffe9c3 0, #f0b152 45%, #b46b16 100%);
+      box-shadow: 0 0 4px rgba(252, 197, 83, 0.9);
+      margin-right: 4px;
+      display: inline-block;
+    }
+
+    /* 输入区域 */
+    .input-panel {
+      background: radial-gradient(circle at 20% 0, #f9f1df 0, #ebdcc2 45%, #d8c3a1 100%);
+      border-radius: 14px;
+      padding: 14px 16px 12px;
+      box-shadow:
+        0 0 0 1px rgba(122, 86, 49, 0.7),
+        inset 0 0 20px rgba(124, 88, 50, 0.55);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .input-panel-header span {
+      opacity: 0.85;
+    }
+
+    .input-panel-header .hint {
+      font-size: 11px;
+      opacity: 0.7;
+    }
+
+    textarea {
+      width: 100%;
+      resize: vertical;
+      min-height: 80px;
+      max-height: 180px;
+      border-radius: 10px;
+      border: 1px solid rgba(125, 93, 55, 0.8);
+      padding: 9px 10px;
+      outline: none;
+      background: rgba(255, 252, 245, 0.9);
+      font-family: inherit;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #3d2918;
+      box-shadow: inset 0 0 14px rgba(138, 100, 63, 0.3);
+    }
+
+    textarea::placeholder {
+      color: rgba(102, 79, 48, 0.7);
+      font-size: 12px;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .controls-left {
+      font-size: 11px;
+      opacity: 0.75;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 7px 18px;
+      font-size: 13px;
+      cursor: pointer;
+      background: linear-gradient(90deg, #c0562d 0, #d77932 50%, #c0562d 100%);
+      color: #fff8eb;
+      box-shadow:
+        0 2px 6px rgba(117, 53, 19, 0.7),
+        0 0 0 1px rgba(71, 26, 10, 0.85);
+      letter-spacing: 0.2em;
+      text-indent: 0.2em;
+      white-space: nowrap;
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow:
+        0 1px 3px rgba(117, 53, 19, 0.7),
+        0 0 0 1px rgba(71, 26, 10, 0.9);
+    }
+
+    /* 诗笺卡片 */
+    .poem-card {
+      position: absolute;
+      min-width: 220px;
+      max-width: 320px;
+      padding: 10px;
+      cursor: grab;
+      user-select: none;
+      transform-origin: center center;
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+
+    .poem-card.dragging {
+      cursor: grabbing;
+      transform: scale(1.04) rotate(var(--card-rotate, 0deg));
+      z-index: 999;
+    }
+
+    .poem-card-inner {
+      position: relative;
+      width: 100%;
+      border-radius: 12px;
+      padding: 12px 14px 10px;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(255, 252, 244, 0.95) 0, rgba(243, 231, 210, 0.95) 48%, rgba(227, 206, 175, 0.96) 100%);
+      box-shadow:
+        0 10px 18px rgba(102, 72, 38, 0.6),
+        0 0 0 1px rgba(117, 87, 51, 0.85);
+      border: 1px solid rgba(121, 88, 49, 0.65);
+      overflow: hidden;
+    }
+
+    .poem-card-inner::before {
+      content: "";
+      position: absolute;
+      inset: 4px;
+      border-radius: 10px;
+      border: 1px dashed rgba(153, 116, 70, 0.55);
+      pointer-events: none;
+    }
+
+    .poem-card-title {
+      font-size: 12px;
+      letter-spacing: 0.2em;
+      text-indent: 0.2em;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #7c522d;
+    }
+
+    .poem-card-title span:last-child {
+      font-size: 10px;
+      opacity: 0.7;
+    }
+
+    .poem-card-text {
+      font-size: 13px;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 60px;
+      position: relative;
+    }
+
+    /* 打字机光标 */
+    .cursor {
+      display: inline-block;
+      width: 0.7em;
+      border-bottom: 1px solid rgba(86, 59, 36, 0.8);
+      margin-left: 2px;
+      animation: blink 0.8s steps(1) infinite;
+    }
+
+    @keyframes blink {
+      0%, 49% {
+        opacity: 1;
+      }
+      50%, 100% {
+        opacity: 0;
+      }
+    }
+
+    .poem-card-footer {
+      margin-top: 6px;
+      font-size: 11px;
+      text-align: right;
+      color: rgba(96, 64, 40, 0.9);
+    }
+
+    .poem-card-seal {
+      position: absolute;
+      bottom: 4px;
+      left: 6px;
+      font-size: 11px;
+      color: #a73533;
+      border: 1px solid #a73533;
+      padding: 2px 4px;
+      transform: rotate(-8deg);
+      opacity: 0.85;
+      background-color: rgba(255, 246, 236, 0.95);
+    }
+
+    .poem-card:hover {
+      transform: translateY(-2px) rotate(var(--card-rotate, 0deg));
+      box-shadow:
+        0 14px 22px rgba(73, 52, 30, 0.75),
+        0 0 0 1px rgba(102, 78, 48, 0.9);
+      z-index: 10;
+    }
+
+    .poem-card.dragging:hover {
+      transform: scale(1.04) rotate(var(--card-rotate, 0deg));
+    }
+
+    /* 小标签 */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(140, 99, 59, 0.7);
+      background-color: rgba(250, 243, 228, 0.9);
+    }
+
+    .tag-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #fbe2c4 0, #e09c3b 40%, #ab671f 100%);
+      box-shadow: 0 0 4px rgba(229, 162, 69, 0.8);
+    }
+
+    .footer-note {
+      margin-top: 4px;
+      font-size: 10px;
+      opacity: 0.7;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>古意打字机 <span>· Motorola Fix Beeper</span></h1>
+      <p>敲下一行字，捻起一缕墨香，让今日心事化作一笺诗意。</p>
+    </header>
+
+    <section class="desk">
+      <!-- 上：诗笺画布 -->
+      <div class="canvas" id="canvas"></div>
+
+      <!-- 下：打字机与输入 -->
+      <div class="typewriter-panel">
+        <!-- 打字机 -->
+        <div class="typewriter-wrapper">
+          <div class="typewriter-body">
+            <div class="paper-slot">
+              <div class="paper">
+                <div class="label-main">修辞立其诚</div>
+                <div class="label-sub">
+                  <span>墨迹缓缓出 · 字字皆心声</span>
+                  <span>MOTOROLA · FIX · BEEPER</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="keyboard">
+              <div class="brand-strip">
+                MOTOROLA FIX BEEPER · ANTIQUE TYPEWRITER
+              </div>
+              <div class="key-row">
+                <div class="key">詩</div>
+                <div class="key">文</div>
+                <div class="key">墨</div>
+                <div class="key">香</div>
+                <div class="key">風</div>
+                <div class="key">月</div>
+              </div>
+              <div class="key-row">
+                <div class="key">山</div>
+                <div class="key">水</div>
+                <div class="key">雲</div>
+                <div class="key">煙</div>
+                <div class="key">茶</div>
+                <div class="key">書</div>
+              </div>
+              <div class="key-row">
+                <div class="space-bar"></div>
+              </div>
+              <div class="indicator-strip">
+                <span><span class="indicator-dot"></span>墨带 · ONLINE</span>
+                <span>字距 · 均匀</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 输入区域 -->
+        <div class="input-panel">
+          <div class="input-panel-header">
+            <span>请在此处写下今日的诗句、感想或一封小信笺。</span>
+            <span class="hint">提示：换行可分句，更有古诗断句之感。</span>
+          </div>
+          <textarea
+            id="inputText"
+            placeholder="例：\n霓裳一曲山河远，打字声中月色温。\n今日心事缓缓落在纸上……"
+          ></textarea>
+          <div class="controls">
+            <div class="controls-left">
+              <div class="tag">
+                <span class="tag-dot"></span>
+                <span>生成后可用鼠标拖拽卡片到画布任意位置</span>
+              </div>
+              <div class="footer-note">若不知从何写起，不妨写下此刻所在之地与心情。</div>
+            </div>
+            <button id="generateBtn">生成诗笺</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      const canvas = document.getElementById("canvas");
+      const inputText = document.getElementById("inputText");
+      const generateBtn = document.getElementById("generateBtn");
+
+      let cardCount = 0;
+
+      function createPoemCard(text) {
+        cardCount += 1;
+
+        const card = document.createElement("div");
+        card.className = "poem-card";
+
+        // 小的随机旋转角度，增加“随手放置”的感觉
+        const randomRotate = (Math.random() * 6 - 3).toFixed(2) + "deg";
+        card.style.setProperty("--card-rotate", randomRotate);
+
+        // 初始位置放在画布中央略偏上
+        const canvasRect = canvas.getBoundingClientRect();
+        const cardWidth = 260;
+        const cardHeight = 160;
+
+        const left =
+          (canvasRect.width - cardWidth) / 2 + (Math.random() * 40 - 20);
+        const top =
+          (canvasRect.height - cardHeight) / 2 + (Math.random() * 30 - 60);
+
+        card.style.left = left + "px";
+        card.style.top = top + "px";
+
+        const inner = document.createElement("div");
+        inner.className = "poem-card-inner";
+
+        const title = document.createElement("div");
+        title.className = "poem-card-title";
+        title.innerHTML = `<span>心有古意 · 第 ${cardCount} 笺</span><span>${new Date()
+          .toLocaleDateString("zh-CN")
+          .replace(/\//g, ".")}</span>`;
+
+        const textEl = document.createElement("div");
+        textEl.className = "poem-card-text";
+
+        const footer = document.createElement("div");
+        footer.className = "poem-card-footer";
+        footer.textContent = "—— 字起机杼间，诗成指下风";
+
+        const seal = document.createElement("div");
+        seal.className = "poem-card-seal";
+        seal.textContent = "古意修辞局";
+
+        inner.appendChild(title);
+        inner.appendChild(textEl);
+        inner.appendChild(footer);
+        inner.appendChild(seal);
+
+        card.appendChild(inner);
+        canvas.appendChild(card);
+
+        // 打字效果
+        typeWriter(textEl, text.trim());
+        // 拖拽初始化
+        makeDraggable(card);
+      }
+
+      function typeWriter(targetEl, fullText) {
+        const speed = 40; // 打字速度（毫秒/字符）
+        let index = 0;
+
+        // 光标元素
+        const cursor = document.createElement("span");
+        cursor.className = "cursor";
+        cursor.textContent = "";
+        targetEl.textContent = "";
+        targetEl.appendChild(cursor);
+
+        function step() {
+          if (index <= fullText.length) {
+            const current = fullText.slice(0, index);
+            // 处理换行
+            targetEl.innerHTML =
+              current.replace(/\n/g, "<br>") + cursor.outerHTML;
+            index++;
+            setTimeout(step, speed);
+          } else {
+            // 完成后保留文本，但去掉光标
+            targetEl.innerHTML = fullText.replace(/\n/g, "<br>");
+          }
+        }
+
+        step();
+      }
+
+      function makeDraggable(card) {
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let initialLeft = 0;
+        let initialTop = 0;
+
+        function onPointerDown(e) {
+          e.preventDefault();
+          const canvasRect = canvas.getBoundingClientRect();
+          const cardRect = card.getBoundingClientRect();
+
+          isDragging = true;
+          card.classList.add("dragging");
+
+          // pointer位置相对卡片左上角的偏移
+          if (e.touches && e.touches.length > 0) {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+          } else {
+            startX = e.clientX;
+            startY = e.clientY;
+          }
+
+          initialLeft = cardRect.left - canvasRect.left;
+          initialTop = cardRect.top - canvasRect.top;
+
+          document.addEventListener("pointermove", onPointerMove);
+          document.addEventListener("pointerup", onPointerUp);
+          document.addEventListener("touchmove", onPointerMove, { passive: false });
+          document.addEventListener("touchend", onPointerUp);
+        }
+
+        function onPointerMove(e) {
+          if (!isDragging) return;
+          e.preventDefault();
+
+          const canvasRect = canvas.getBoundingClientRect();
+          let currentX, currentY;
+
+          if (e.touches && e.touches.length > 0) {
+            currentX = e.touches[0].clientX;
+            currentY = e.touches[0].clientY;
+          } else {
+            currentX = e.clientX;
+            currentY = e.clientY;
+          }
+
+          const dx = currentX - startX;
+          const dy = currentY - startY;
+
+          let newLeft = initialLeft + dx;
+          let newTop = initialTop + dy;
+
+          const cardRect = card.getBoundingClientRect();
+          const cardWidth = cardRect.width;
+          const cardHeight = cardRect.height;
+
+          // 限制在画布内
+          newLeft = Math.min(
+            Math.max(newLeft, 0),
+            canvasRect.width - cardWidth
+          );
+          newTop = Math.min(
+            Math.max(newTop, 0),
+            canvasRect.height - cardHeight
+          );
+
+          card.style.left = newLeft + "px";
+          card.style.top = newTop + "px";
+        }
+
+        function onPointerUp() {
+          isDragging = false;
+          card.classList.remove("dragging");
+
+          document.removeEventListener("pointermove", onPointerMove);
+          document.removeEventListener("pointerup", onPointerUp);
+          document.removeEventListener("touchmove", onPointerMove);
+          document.removeEventListener("touchend", onPointerUp);
+        }
+
+        // 使用 pointer 事件，兼容鼠标/触屏
+        card.addEventListener("pointerdown", onPointerDown);
+        card.addEventListener("touchstart", onPointerDown, { passive: false });
+      }
+
+      generateBtn.addEventListener("click", () => {
+        const text = inputText.value;
+        if (!text.trim()) {
+          alert("先写下一两句心里的话，再请打字机为你落在纸上。");
+          return;
+        }
+        createPoemCard(text);
+        // 可选：生成后清空输入
+        // inputText.value = "";
+      });
+    })();
+  </script>
+</body>
+</html>
